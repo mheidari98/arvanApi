@@ -247,7 +247,7 @@ def startMenu(arv):
 def main() -> None:
     console.print("> Welcome to Arvan CDN Manager")
     console.print("> Please enter your Arvan ApiKey. For example it like (Apikey df0bbd86-8f94-5c1e-a6ebasdasd-asdasd)")
-    console.print("  If you don't have an ApiKey, you can get it from https://panel.arvancloud.ir/profile/api-keys")
+    console.print("  If you don't have an ApiKey, you can get it from https://panel.arvancloud.ir/profile/machine-user")
     apikey = input("> ").strip()
 
     console.print("")
