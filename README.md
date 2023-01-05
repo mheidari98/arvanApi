@@ -1,18 +1,34 @@
 # arvanApi
 
 ## General info
-Simple ArvanCloud API for python
+Simple ArvanCloud API for python based on [ArvanCloud API](https://www.arvancloud.ir/docs/api/cdn/4.0)
 
 ## Requirements
 - [python 3](https://www.python.org/downloads)
-- install packages
+- [ArvanCloud API key](https://panel.arvancloud.ir/profile/machine-user)
+
+## Installation
   ```console
   pip install --upgrade git+https://github.com/mheidari98/arvanApi.git
   ```
-- [ArvanCloud API key](https://panel.arvancloud.ir/profile/api-keys)
+
+## Uninstall
+  ```console
+  pip uninstall arvanapi
+  ```
 
 
 ## Usage
+There are two ways of using this package. The easy way is to use the `arvan` script, which allows you to manage your domains and DNS records from the command line. The other way is to use the `Arvan` class in your python code.
+
+A quick example:
+```console
+# Arvan cli CDN Manager
+arvan
+```
+---
+
+You can also use it programmatically, like this:
 ```python
 from arvanApi import Arvan
 
