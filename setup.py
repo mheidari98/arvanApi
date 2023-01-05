@@ -1,25 +1,38 @@
-import os
+#!/usr/bin/env python3
+# -*- coding=utf-8 -*-
+
+from os import path
 from setuptools import find_packages, setup
 
-with open(os.path.join(os.path.dirname(__file__), "README.md")) as readme:
-    README = readme.read()
+proj_dir = path.dirname(path.realpath(__file__))
+about_file = path.join(proj_dir, "arvanApi", "__version__.py")
+readme_file = path.join(proj_dir, "README.md")
+
+about = {}
+exec(open(about_file, "r", encoding="utf-8").read(), about)
+
+long_description = open(readme_file, "r", encoding="utf-8").read()
+
+requirements = open("requirements.txt", "r", encoding="utf-8").read().splitlines()
 
 setup(
-    name="arvanApi",
-    version="0.0.1",
+    name=about["__title__"],
+    version=about["__version__"],
 
-    author="Mahdi Heidari",
-    author_email="mahdih3idari@gmail.com",
+    author=about["__author__"],
+    author_email=about["__author_email__"],
 
-    description="Simple Arvan api",
-    long_description=README,
+    description=about["__description__"],
+    long_description=long_description,
     long_description_content_type="text/markdown",
 
-    url="https://github.com/mheidari98/arvanApi",
+    url=about["__url__"],
 
-    license='MIT License',
+    license=about["__license__"],
 
-    packages=['arvanApi'],
+    packages=find_packages(), # ['arvanApi']
+
+    install_requires=requirements,
 
     extras_require={
         "dev": [
@@ -27,10 +40,12 @@ setup(
             "twine"
         ]
     },
-
     
+    scripts=[ 
+        path.join("scripts", "arvan"),  # scripts/arvan
+    ],
 
-    install_requires=['requests'],
+    # entry_points={"console_scripts": ["arvancli = arvanApi.__main__:main"]},
 
     classifiers=[
         # https://pypi.org/classifiers

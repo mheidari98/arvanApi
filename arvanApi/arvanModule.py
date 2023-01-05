@@ -3,14 +3,16 @@
 # Doc @ https://www.arvancloud.ir/docs/api/cdn/4.0
 # Api Key @ https://panel.arvancloud.ir/profile/api-keys
 import json
-import requests
+import logging
 from time import time
+import requests
 
 
 class ArvanDNS:
-    def __init__(self, data, debug=False):
+    def __init__(self, data, domain, debug=False):
         # for key in data:
         #     setattr(self, key, data[key])
+        self.domain = domain
         self.id = data.get('id', None)
         self.type = data.get('type', None)
         self.name = data.get('name', None)
@@ -31,7 +33,10 @@ class ArvanDNS:
     def __repr__(self) -> str:
         if self.type == 'a':
             port  = f":{self.value[0]['port']}" if self.value[0]['port'] else ""
-            return f"[{self.type}] {self.name} -> {self.value[0]['ip']}{port}\t ID: {self.id}"
+            if self.name == '@':
+                return f"[{self.type}] {self.domain} -> {self.value[0]['ip']}{port}\t ID: {self.id}"
+            else:
+                return f"[{self.type}] {self.name}.{self.domain}  -> {self.value[0]['ip']}{port}\t ID: {self.id}"
         else:
             return f"[{self.type}] {self.name}\t ID: {self.id}"
 
@@ -82,18 +87,19 @@ class ArvanDomain:
         if r.status_code == 200 :
             res = r.json()
             for record in res['data']:
-                rec = ArvanDNS(record)
-                DnsList[(rec.type, rec.name)] = rec
+                rec = ArvanDNS(record, self.domain, self.DEBUG)
+                if rec.type == 'a':
+                    DnsList[(rec.type, rec.name)] = rec
                 if self.DEBUG:
-                    print(f"\t{rec}")
+                    logging.debug(f"\t{rec}")
             if res['links']['next'] :
                 DnsList.update(self._getDNS(search, page+1, rType, per_page))
         elif r.status_code == 401:
-            print("[_getDNS] Access token is missing or invalid")
+            logging.error("[_getDNS] Access token is missing or invalid")
         elif r.status_code == 404:
-            print("[_getDNS] Resource not found")
+            logging.error("[_getDNS] Domain not found")
         else:
-            print(f"[_getDNS] Err with status code {r.status_code}")
+            logging.error(f"[_getDNS] Err with status code {r.status_code}")
         return DnsList
 
     def getDnsRecords(self, type, name):
@@ -122,23 +128,23 @@ class ArvanDomain:
         r = requests.post(url, data=json.dumps(payload), headers=self.HEADERS )
 
         if r.status_code == 201 :
-            rec = ArvanDNS(r.json()['data'])
+            rec = ArvanDNS(r.json()['data'], self.domain, self.DEBUG)
             self.DNSs[(rec.type, rec.name)] = rec
-            print(f"[createDnsARecord] DNS record created: {rec}")
+            logging.info(f"DNS record created: {rec}")
             return r.json()['data']['id']
         elif r.status_code == 401:
-            print("[createDnsARecord] Access token is missing or invalid")
+            logging.error("[createDnsARecord] Access token is missing or invalid")
         elif r.status_code == 404:
-            print("[createDnsARecord] Resource not found")
+            logging.error("[createDnsARecord] Resource not found")
         elif r.status_code == 422:
-            print("[createDnsARecord] The given data was invalid")
+            logging.error("[createDnsARecord] The given data was invalid")
         else:
-            print(f"[createDnsARecord] Err with status code {r.status_code}")
+            logging.error(f"[createDnsARecord] Err with status code {r.status_code}")
         return None
     
     def deleteDnsByName(self, name, type='a'):
         if (type, name) not in self.DNSs:
-            print(f"[deleteDnsByName] DNS record {name} not found")
+            logging.error(f"[deleteDnsByName] DNS record {name} not found")
             return False
         
         rId = self.getDnsRecords(type, name).id
@@ -146,15 +152,15 @@ class ArvanDomain:
         r = requests.delete(url, headers=self.HEADERS )
 
         if r.status_code == 200 :
-            print(f"[delDnsRecord] DNS record deleted")
+            logging.info(f"[delDnsRecord] DNS record deleted") 
             del self.DNSs[(type, name)]
             return True
         elif r.status_code == 401:
-            print("[delDnsRecord] Access token is missing or invalid")
+            logging.error("[delDnsRecord] Access token is missing or invalid")
         elif r.status_code == 404:
-            print("[delDnsRecord] Resource not found")
+            logging.error("[delDnsRecord] Resource not found")
         else:
-            print(f"[delDnsRecord] Err with status code {r.status_code}")
+            logging.error(f"[delDnsRecord] Err with status code {r.status_code}")
         return False
     
     def deleteDnsById(self, rId):
@@ -162,27 +168,27 @@ class ArvanDomain:
         r = requests.delete(url, headers=self.HEADERS )
 
         if r.status_code == 200 :
-            print(f"[delDnsRecord] DNS record deleted")
+            logging.info(f"[delDnsRecord] DNS record deleted")
             self.DNSs = self._getDNS()
             return True
         elif r.status_code == 401:
-            print("[delDnsRecord] Access token is missing or invalid")
+            logging.error("[delDnsRecord] Access token is missing or invalid")
         elif r.status_code == 404:
-            print("[delDnsRecord] Resource not found")
+            logging.error("[delDnsRecord] Resource not found")
         else:
-            print(f"[delDnsRecord] Err with status code {r.status_code}")
+            logging.error(f"[delDnsRecord] Err with status code {r.status_code}")
         return False
     
     def getSslSettings(self):
         url = f'{self.BASE_URL}/ssl'
         r = requests.get(url, headers=self.HEADERS)
         if r.status_code == 200 :
-            print(f"Succesfully retrieved SSL settings for {self.domain}")
+            logging.info(f"Succesfully retrieved SSL settings for {self.domain}")
             return r.json()
         elif r.status_code == 401:
-            print("Access token is missing or invalid")
+            logging.error("Access token is missing or invalid")
         elif r.status_code == 404:
-            print("Resource not found")
+            logging.error("Resource not found")
         return None
     
     def changeSsl(self, ssl_status=True): # True for enable, False for disable
@@ -190,14 +196,14 @@ class ArvanDomain:
         payload = { 'ssl_status': ssl_status }
         r = requests.patch(url, data=json.dumps(payload), headers=self.HEADERS  )
         if r.status_code == 200 :
-            print(f"Succesfully changed SSL settings for {self.domain}")
+            logging.info(f"Succesfully changed SSL settings for {self.domain}")
             return True
         elif r.status_code == 401:
-            print("Access token is missing or invalid")
+            logging.error("Access token is missing or invalid")
         elif r.status_code == 404:
-            print("Resource not found")
+            logging.error("Resource not found")
         else:
-            print(f"Err with status code {r.status_code}")
+            logging.error(f"Err with status code {r.status_code}")
         return False
 
     def _deleteDomain(self):
@@ -205,16 +211,16 @@ class ArvanDomain:
         payload = { 'id': self.id }
         r = requests.delete(url, data=json.dumps(payload), headers=self.HEADERS  )
         if r.status_code//100 == 2:
-            print(f"Domain {self.domain} deleted")
+            logging.info(f"Domain {self.domain} deleted")
             return True
         elif r.status_code == 401:
-            print("Access token is missing or invalid")
+            logging.error("Access token is missing or invalid")
         elif r.status_code == 404:
-            print("Resource not found")
+            logging.error("Resource not found")
         elif r.status_code == 422:
-            print(f"The given data was invalid")
+            logging.error(f"The given data was invalid")
         else:
-            print(f"Err with status code {r.status_code}")
+            logging.error(f"Err with status code {r.status_code}")
         return False
         
     def __repr__(self) -> str:
@@ -224,7 +230,7 @@ class ArvanDomain:
 class Arvan:
     def __init__(self, api_key, debug=False):
         self.BASE_URL = "https://napi.arvancloud.ir/cdn/4.0"
-        self.API_KEY = f"Apikey {api_key}"
+        self.API_KEY = api_key if "Apikey" in api_key else f"Apikey {api_key}" 
         self.HEADERS = {
                     'Authorization': f'{self.API_KEY}',
                     'Content-Type': 'application/json'
@@ -247,19 +253,19 @@ class Arvan:
                 rec = ArvanDomain(self.API_KEY, record, debug=self.DEBUG)
                 DomainList[record['domain']] = rec
                 if self.DEBUG :
-                    print(f"{rec}")
+                    logging.debug(f"{rec}")
             if res['links']['next'] :
                 DomainList.update(self.GetDomains(search, page+1, per_page))
             return DomainList
         elif r.status_code == 401:
-            print("Access token is missing or invalid")
+            logging.error("Access token is missing or invalid")
         else:
-            print(f"Err with status code {r.status_code}")
-        return DomainList
+            logging.error(f"Err with status code {r.status_code}")
+        return False
 
     def createDomain(self, domain):
         if domain in self._domainsDict:
-            print(f"Domain {domain} already exists")
+            logging.error(f"Domain {domain} already exists")
             return None
         
         url = f"{self.BASE_URL}/domains/dns-service"
@@ -273,15 +279,15 @@ class Arvan:
             rec = ArvanDomain(self.API_KEY, r.json()['data'], debug=self.DEBUG)
             self._domainsDict[domain] = rec
             if self.DEBUG :
-                print(f"New domain {domain} created!")
-                print(f"please set ns to {rec.ns_keys}")
+                logging.debug(f"New domain {domain} created!")
+                logging.debug(f"please set ns to {rec.ns_keys}")
             return True
         elif r.status_code == 401:
-            print("Access token is missing or invalid")
+            logging.error("Access token is missing or invalid")
         elif r.status_code == 422:
-            print(f"The given data was invalid")
+            logging.error(f"The given data was invalid")
         else:
-            print(f"Err with status code {r.status_code}")
+            logging.error(f"Err with status code {r.status_code}")
         return False
 
     def deleteDomain(self, domain):
