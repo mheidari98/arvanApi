@@ -41,12 +41,16 @@ setup(
         ]
     },
     
-    scripts=[ 
-        path.join("scripts", "arvan"),  # scripts/arvan
-    ],
+    # scripts=[ 
+    #     path.join("scripts", "arvan"),  # scripts/arvan
+    # ],
 
-    # entry_points={"console_scripts": ["arvancli = arvanApi.__main__:main"]},
-
+    entry_points={
+        "console_scripts": [
+            "arvan = arvanApi.__main__:main",
+        ]
+    },
+    
     classifiers=[
         # https://pypi.org/classifiers
         'Development Status :: 3 - Alpha',
