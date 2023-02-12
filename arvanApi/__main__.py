@@ -173,7 +173,7 @@ def domainMenu(arv, domain):
             console.print(f"\tns keys = {domain.ns_keys}")
             #exit(1)
         ssl_status = domain.getSslSettings()['data']['ssl_status']
-        console.print(f"ssl status: {ssl_status}")
+        console.print(f"traffics last 30d: {domain.getTrafficsReport('30d')}\t\tssl status: {ssl_status}")
 
         console.print("\nSelect an action:")
         console.print("\t0 - back to main menu")

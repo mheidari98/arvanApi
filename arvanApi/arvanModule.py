@@ -8,6 +8,17 @@ from time import time
 import requests
 
 
+def format_bytes(size):
+    # https://stackoverflow.com/questions/12523586
+    power = 2**10  # 1024
+    n = 0  # math.floor( math.log(size, 1024) )
+    power_labels = {0 : 'Bytes', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB', 5: 'PB', 6: 'EB', 7: 'ZB', 8: 'YB'}
+    while size > power:
+        size /= power
+        n += 1
+    return f"{size:.2f} {power_labels[n]}"
+
+
 class ArvanDNS:
     def __init__(self, data, domain, debug=False):
         # for key in data:
@@ -179,6 +190,27 @@ class ArvanDomain:
             logging.error(f"[delDnsRecord] Err with status code {r.status_code}")
         return False
     
+    def getTrafficsReport(self, period="30d"):
+        url = f'{self.BASE_URL}/reports/traffics'
+
+        acceptPeriod = ["1h" "3h" "6h" "12h" "24h" "7d" "30d"]
+        period = period if period in acceptPeriod else "30d"
+
+        params = {
+                    'period': f'{period}',
+        }
+
+        r = requests.get(url, params=params, headers=self.HEADERS)
+
+        if r.status_code == 200 :
+            logging.info(f"Succesfully retrieved traffic reports for {self.domain}")
+            return format_bytes( r.json()['data']['statistics']['traffics']['total'] )
+        elif r.status_code == 401:
+            logging.error("Access token is missing or invalid")
+        elif r.status_code == 404:
+            logging.error("Resource not found")
+        return None
+
     def getSslSettings(self):
         url = f'{self.BASE_URL}/ssl'
         r = requests.get(url, headers=self.HEADERS)
