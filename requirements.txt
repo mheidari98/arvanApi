@@ -4,6 +4,6 @@ commonmark==0.9.1
 idna==3.4
 Pygments==2.14.0
 PySocks==1.7.1
-requests==2.28.1
+requests==2.31.0
 rich==13.0.0
 urllib3==1.26.13
